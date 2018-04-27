@@ -8,17 +8,17 @@
 	<script type="text/javascript">
 		
 		var rainStorm = [];
-		var symbolSize = 13;
+		var symbolSize = 15;
 
 		function setup() {
- 			canvas = createCanvas(800/*window.innerWidth*/, 400 /*window.innerHeight*/);
+ 			canvas = createCanvas(window.innerWidth-50, window.innerHeight-50);
 			for ( var i = 0 ; i < (width/symbolSize) ; i++ ){
 				rainStorm.push( new RainStream(symbolSize,i*symbolSize, katakana));
 			}
 		}
  			
 		function draw() {
-		  	background(0,120);// hint we need the background to be a little transparent to support the blur effect.
+		  	background(0, 120/*,120*/);// hint we need the background to be a little transparent to support the blur effect.
 		  	for ( var i = 0 ; i < rainStorm.length ; i ++ ){
 		  		//rainStorm[i].update();
 		  		rainStorm[i].draw();
