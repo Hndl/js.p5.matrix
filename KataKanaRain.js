@@ -191,15 +191,17 @@ var RainStream = function ( symbolSize_ , xoff_, charSet_){
 	this.symbolSize = symbolSize_;
 	this.xoff = xoff_;
 	this.yoff = 0;
-	this.speed = random(1,7);
+	this.speed = random(2,10);
 	this.maxSymbolsPerStream = height/(this.symbolSize+this.charSpacing);
 	this.charCount = round(random(10,this.maxSymbolsPerStream));
 	//console.log(this.maxSymbolsPerStream + ":=" + this.charCount);
-
-
+	this.shimmerPoint = random(height/2, height-100);
+  // this.darkStream = floor(random(0,100)) < 90 ? false : true; /* 80% do normal, 20% do dark*/
+  this.darkStream = this.speed < 5 ? true : false;
 	this.symbolStream = [];
 	for (var i = 0 ; i< this.charCount; i++ ){
-		this.symbolStream.push ( new Symbol(charSet_ ,this.xoff,this.yoff,this.speed, this.symbolSize, (i==(this.charCount-1))/*put bright char at start*/ ));
+		var headChars = i === this.charCount.length;
+		this.symbolStream.push ( new Symbol(charSet_ ,this.xoff,this.yoff,this.speed, this.symbolSize, (this.charCount-i) ,this.shimmerPoint, this.darkStream));
 		this.yoff += (this.symbolSize+this.charSpacing);
 	}
 
@@ -283,15 +285,38 @@ RainStream.prototype.draw = function () {
           ###########################
           ###########################
           */
-var Symbol = function ( whichCharset_, x_, y_ , speed_ , symbolSize_, isFirst_) {
+var Symbol = function ( whichCharset_, x_, y_ , speed_ , symbolSize_, idx_, shimmerPoint_, _dark) {
 	this.useCharsetOf = whichCharset_;
 	this.x = x_;
 	this.y = y_;
 	this.speed = speed_;
 	this.symbolSize = symbolSize_
 	this.charValue = this.useCharsetOf.getRandomChar();
-	this.charChangeInterval = round(random(10,60));
-	this.isFirst = isFirst_;
+	this.charChangeInterval = round(random(10,30));
+	this.charIdx = idx_;
+	//console.log(this.charIdx);
+	this.decayRate = 10;
+	
+	this.shimmerPoint = shimmerPoint_;
+	
+  this.A = 255;
+
+  if (this.speed > 0 && this.speed < 3 ){
+    this.G = 80;
+    this.R = 0;
+    this.B = 0;
+  } else if (this.speed > 2 && this.speed < 5 ) {
+    this.R = 34;
+    this.G = 139;
+    this.B = 34;
+  } else {
+    this.R = 0;
+    this.G = 255;
+    this.B = 100;
+  }
+  
+  //this.dark = floor(random(0,100)) < 90 ? false : true; /* 80% do normal, 20% do dark*/
+  this.dark = _dark;
 };
 
 Symbol.prototype.update = function(){
@@ -303,15 +328,24 @@ Symbol.prototype.update = function(){
 };
 
 Symbol.prototype.draw = function(){
-	//push();//indented to highlight transactional behaviour of push and pop.
-		stroke(255,255,255);
-		if ( this.isFirst){
-			fill(100,255,200);
-		} else {
-			fill(0,255,100);
-		}
-		textSize(this.symbolSize);
-		text(this.charValue, this.x, this.y);
+	
+		// Note: as the first 5 systems past over 50% of height, they need to shine white.
+		// then as they move away, fade back to greed.
+	
+      if ( this.charIdx>0  && this.charIdx<5 && this.y >= this.shimmerPoint){
+        this.A = map( this.y, this.shimmerPoint,this.shimmerPoint+150,255,0)
+        if ( this.A > 0 ){
+          fill(255,255,255,this.A);
+          textSize(this.symbolSize);
+          text(this.charValue, this.x, this.y);
+        }
+      } else {
+
+       fill( this.R, this.G, this.B);
+		   textSize(this.symbolSize);
+       text(this.charValue, this.x, this.y);
+      }
+		
 	//pop();
 };
 
@@ -395,13 +429,6 @@ SymbolSet.prototype.getChar = function( unicodeChar_ ) {
 	return ( String.fromCharCode(unicodeChar_));
 };
 SymbolSet.prototype.getRandomChar = function ( ) { 
-	//var cPos  =round( random(0, this.range));
-	//console.log(cPos);
-	//console.log( this.firstChar);
-	//var tChar = this.firstChar + cPos;
-	//console.log( tChar );
-	//var c = String.fromCharCode( tChar );
-	//console.log(c);
 	return ( String.fromCharCode ( this.firstChar + round( random (0,this.range))));
 };
 
